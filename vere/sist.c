@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <unistd.h>
 #include <uv.h>
 
@@ -295,8 +296,15 @@ _sist_cask(c3_c* dir_c, u3_noun nun)
 {
   c3_c   paw_c[60];
   u3_noun key;
+  struct termios old, new;
 
   uH;
+
+  (void) tcgetattr (fileno (stdin), &old);
+  new = old;
+  new.c_lflag &= ~ECHO;
+  (void) tcsetattr (fileno (stdin), TCSAFLUSH, &new);
+
   while ( 1 ) {
     printf("passcode for %s%s? ~", dir_c, (c3y == nun) ? " [none]" : "");
 
@@ -334,6 +342,7 @@ _sist_cask(c3_c* dir_c, u3_noun nun)
       break;
     }
   }
+  (void) tcsetattr (fileno (stdin), TCSAFLUSH, &old);
   uL(0);
   return key;
 }
