@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <termios.h>
 #include <unistd.h>
 #include <uv.h>
 
@@ -296,14 +295,20 @@ _sist_cask(c3_c* dir_c, u3_noun nun)
 {
   c3_c   paw_c[60];
   u3_noun key;
-  struct termios old, new;
+  u3_utty* uty_u = calloc(1, sizeof(u3_utty));
+  uty_u->fid_i = 0;
 
   uH;
 
-  (void) tcgetattr (fileno (stdin), &old);
-  new = old;
-  new.c_lflag &= ~ECHO;
-  (void) tcsetattr (fileno (stdin), TCSAFLUSH, &new);
+  // disable terminal echo when typing in passcode
+  if ( 0 != tcgetattr(uty_u->fid_i, &uty_u->bak_u) ) {
+    c3_assert(!"init-tcgetattr");
+  }
+  uty_u->raw_u = uty_u->bak_u;
+  uty_u->raw_u.c_lflag &= ~ECHO;
+  if ( 0 != tcsetattr(uty_u->fid_i, TCSADRAIN, &uty_u->raw_u) ) {
+    c3_assert(!"init-tcsetattr");
+  }
 
   while ( 1 ) {
     printf("passcode for %s%s? ~", dir_c, (c3y == nun) ? " [none]" : "");
@@ -311,6 +316,7 @@ _sist_cask(c3_c* dir_c, u3_noun nun)
     paw_c[0] = 0;
     c3_fpurge(stdin);
     fgets(paw_c, 59, stdin);
+    printf("\n");
 
     if ( '\n' == paw_c[0] ) {
       if ( c3y == nun ) {
@@ -342,7 +348,9 @@ _sist_cask(c3_c* dir_c, u3_noun nun)
       break;
     }
   }
-  (void) tcsetattr (fileno (stdin), TCSAFLUSH, &old);
+  if ( 0 != tcsetattr(uty_u->fid_i, TCSADRAIN, &uty_u->bak_u) ) {
+    c3_assert(!"init-tcsetattr");
+  }
   uL(0);
   return key;
 }
