@@ -351,6 +351,7 @@ _sist_cask(c3_c* dir_c, u3_noun nun)
   if ( 0 != tcsetattr(uty_u->fid_i, TCSADRAIN, &uty_u->bak_u) ) {
     c3_assert(!"init-tcsetattr");
   }
+  free(uty_u);
   uL(0);
   return key;
 }
